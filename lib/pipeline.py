@@ -1,4 +1,10 @@
 import logging
+import os
+import time
+
+from gi.repository import Gst
+
+DISCARD_CHANNEL_KEYWORD = "!discard"
 
 
 class Pipeline(object):
@@ -9,14 +15,14 @@ class Pipeline(object):
         self.config = config
 
         self.log = logging.getLogger('Pipeline')
-        self.pipeline = ""
+        pipeline = ""
 
         if config['source'].getboolean('demo'):
-            self.pipeline += """
-                audiotestsrc !
+            pipeline += """
+                audiotestsrc is-live=true !
             """
         else:
-            self.pipeline += """
+            pipeline += """
                 rtspsrc location={location} !
                     rtpjitterbuffer latency={latency} !
                     rtpL24depay !
@@ -24,39 +30,97 @@ class Pipeline(object):
                     audioconvert !
             """
 
-        self.pipeline += """
+        pipeline += """
                 audio/x-raw, channels={channels}, format={capture_format}, rate={rate} !
-                level name=lvl !
-                deinterleave name=d
+                tee name=tee
+                
+                tee. ! audioconvert ! audio/x-raw, format=S16LE ! level interval={level_interval} name=lvl
+                tee. ! deinterleave name=d
         """.format(
             location=config['source']['url'],
             latency=config['clocking']['jitterbuffer-seconds'],
             channels=config['source']['channels'],
             rate=config['source']['rate'],
             source_format=config['source']['format'],
-            capture_format=config['capture']['format']
+            capture_format=config['capture']['format'],
+            level_interval=int(config['gui']['level-interval']) * 1000000
         )
 
-        for channel in range(0, config['source'].getint('channels')):
-            channel_filename = config['channelmap'].get(str(channel))
+        segment_length = int(config['capture']['segment-length']) * 1000000000
+        for channel in range(0, int(config['source']['channels'])):
+            dirname = self.config['channelmap'].get(str(channel))
 
-            if channel_filename is None:
-                channel_filename = "unknown/{channel}".format(channel=channel)
-
-                self.log.warn("Channel {channel} has no mapping in the config and will be recorded as {filename}"
-                              .format(channel=channel, filename=channel_filename))
-
-            if channel_filename == "!discard":
+            if dirname == DISCARD_CHANNEL_KEYWORD:
                 continue
 
-            # TODO create dirs
-
-            self.pipeline += """
-                d.src_{channel} ! wavenc ! filesink buffer-mode=full buffer-size={buffer_size} name=writer_{channel} location={filename}
+            pipeline += """
+                d.src_{channel} ! queue ! wavenc ! wavparse ! sm_{channel}.audio_0
+                    splitmuxsink name=sm_{channel} muxer=matroskamux max-size-time={segment_length} sink="matroskademux ! filesink"
             """.format(
                 channel=channel,
-                buffer_size=config['capture']['buffer-size'],
-                filename=channel_filename
-            ).rstrip()
+                segment_length=segment_length
+            )
 
-        print(self.pipeline)
+        # parse pipeline
+        self.log.debug('Creating Mixing-Pipeline:\n%s', pipeline)
+        self.pipeline = Gst.parse_launch(pipeline)
+        # self.pipeline.use_clock(Clock) # TODO
+
+        for channel in range(0, int(config['source']['channels'])):
+            el = self.pipeline.get_by_name("sm_{channel}".format(channel=channel))
+
+            if el is None:
+                continue
+
+            dirname = self.config['channelmap'].get(str(channel))
+            if dirname is None:
+                dirname = "unknown/{channel}".format(channel=channel)
+                self.log.warn("Channel {channel} has no mapping in the config and will be recorded as {dirname}"
+                              .format(channel=channel, dirname=dirname))
+
+            dirpath = os.path.join(config['capture']['folder'], dirname)
+            os.makedirs(dirpath, exist_ok=True)
+
+            el.connect('format-location', self.on_format_location, channel, dirpath)
+
+        # configure bus
+        bus = self.pipeline.get_bus()
+        bus.add_signal_watch()
+        bus.enable_sync_message_emission()
+
+        # connect bus-message-handler for error-messages
+        bus.connect("message::eos", self.on_eos)
+        bus.connect("message::error", self.on_error)
+
+        # connect bus-message-handler for level-messages
+        bus.connect("message::element", self.on_level)
+
+        # start process
+        self.log.debug('Launching Mixing-Pipeline')
+        self.pipeline.set_state(Gst.State.PLAYING)
+
+    def on_format_location(self, mux, fragment, channel, dirpath):
+        filename = time.strftime('%Y-%m-%d_%H-%S', time.localtime()) + ".wav"
+        filepath = os.path.join(dirpath, filename)
+        self.log.debug("electing filepath for channel {channel}: {filepath}".format(channel=channel, filepath=filepath))
+        return filepath
+
+    def on_level(self, bus, msg):
+        if msg.src.name != 'lvl':
+            return
+
+        if msg.type != Gst.MessageType.ELEMENT:
+            return
+
+        rms = msg.get_structure().get_value('rms')
+        peak = msg.get_structure().get_value('peak')
+        decay = msg.get_structure().get_value('decay')
+        self.log.debug('level_callback\n  rms=%s\n  peak=%s\n  decay=%s', rms, peak, decay)
+
+    def on_eos(self, bus, message):
+        self.log.debug('Received End-of-Stream-Signal on Mixing-Pipeline')
+
+    def on_error(self, bus, message):
+        self.log.debug('Received Error-Signal on Mixing-Pipeline')
+        (error, debug) = message.parse_error()
+        self.log.debug('Error-Details: #%u: %s', error.code, debug)

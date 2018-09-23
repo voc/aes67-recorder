@@ -14,8 +14,8 @@ parser.add_argument('-c', '--color',
 parser.add_argument('-t', '--timestamp', action='store_true',
                     help="Enable timestamps in the Log-Output")
 
-parser.add_argument('-i', '--ini-file', action='store',
-                    help="Load a custom config.ini-File")
+parser.add_argument('-i', '--ini-file', action='store', required=True,
+                    help="Path to config.ini-File")
 
 parser.add_argument('-s', '--source-url', action='store',
                     help="RTSP Source-Url")

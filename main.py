@@ -49,6 +49,8 @@ class Backuptool(object):
         self.log.debug('creating A/V-Pipeline')
         self.pipeline = Pipeline(config)
 
+        # TODO clocking
+
     def run(self):
         self.log.info('running GObject-MainLoop')
         try:
@@ -70,7 +72,7 @@ def main():
               or (args.color == 'auto' and sys.stderr.isatty())
 
     handler = LogHandler(docolor, args.timestamp)
-    logging.root.addHandler(handler)
+    logging.root.handlers = [handler]
 
     if args.verbose >= 2:
         level = logging.DEBUG

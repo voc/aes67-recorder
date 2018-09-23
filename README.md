@@ -17,5 +17,5 @@ For the time being, just take a look at [config.ini](config.ini).
 ```
 virtualenv -ppython3 env
 ./env/bin/pip install -r requirements.txt
-./env/bin/python aes67.py --source-url=… --capture-folder=…
+./env/bin/python main.py --source-url=… --capture-folder=…
 ```

@@ -9,12 +9,22 @@ class Pipeline(object):
         self.config = config
 
         self.log = logging.getLogger('Pipeline')
-        pipeline = """
-            rtspsrc location={location} !
-                rtpjitterbuffer latency={latency} !
-                rtpL24depay !
-                audio/x-raw, channels={channels}, format={source_format}, rate={rate} !
-                audioconvert !
+        self.pipeline = ""
+
+        if config['source'].getboolean('demo'):
+            self.pipeline += """
+                audiotestsrc !
+            """
+        else:
+            self.pipeline += """
+                rtspsrc location={location} !
+                    rtpjitterbuffer latency={latency} !
+                    rtpL24depay !
+                    audio/x-raw, channels={channels}, format={source_format}, rate={rate} !
+                    audioconvert !
+            """
+
+        self.pipeline += """
                 audio/x-raw, channels={channels}, format={capture_format}, rate={rate} !
                 level name=lvl !
                 deinterleave name=d
@@ -41,12 +51,12 @@ class Pipeline(object):
 
             # TODO create dirs
 
-            pipeline += """
-                    d.src_{channel} ! wavenc ! filesink buffer-mode=full buffer-size={buffer_size} location={filename}
-                """.format(
+            self.pipeline += """
+                d.src_{channel} ! wavenc ! filesink buffer-mode=full buffer-size={buffer_size} name=writer_{channel} location={filename}
+            """.format(
                 channel=channel,
                 buffer_size=config['capture']['buffer-size'],
                 filename=channel_filename
             ).rstrip()
 
-        print(pipeline)
+        print(self.pipeline)

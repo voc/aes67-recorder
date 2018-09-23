@@ -20,8 +20,11 @@ parser.add_argument('-i', '--ini-file', action='store', required=True,
 parser.add_argument('-s', '--source-url', action='store',
                     help="RTSP Source-Url")
 
-parser.add_argument('-d', '--destination-folder', action='store',
+parser.add_argument('-f', '--capture-folder', action='store',
                     help="Destination Folder")
+
+parser.add_argument('--demo', action='store_true',
+                    help="Enable Demo-Model, where instead of a real RTSP-Source a internally generated test-source is used")
 
 
 def parse():

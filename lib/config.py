@@ -45,4 +45,16 @@ def load(args):
         raise RuntimeError('explicitly requested config-file "{}" '
                            'could not be read'.format(args.ini_file))
 
+    if args.source_url:
+        if config['source'].get('url') is not None:
+            log.warn('source-url specified in config *and* on command-line, command-line wins')
+            config['source']['url'] = args.source_url
+
+    if args.capture_folder:
+        if config['capture'].get('folder') is not None:
+            log.warn('capture-folder specified in config *and* on command-line, command-line wins')
+            config['capture']['folder'] = args.capture_folder
+
+    config['source']['demo'] = 'true' if args.demo else 'false'
+
     return config

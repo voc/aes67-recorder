@@ -46,7 +46,7 @@ class Backuptool(object):
         self.mainloop = GObject.MainLoop()
 
         # initialize subsystem
-        self.log.debug('creating A/V-Pipeline')
+        self.log.debug('creating Audio-Pipeline')
         self.pipeline = Pipeline(config)
 
         # TODO clocking

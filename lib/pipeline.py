@@ -54,25 +54,24 @@ class Pipeline(object):
                 continue
 
             pipeline += """
-                d.src_{channel} ! queue ! wavenc ! wavparse ! sm_{channel}.audio_0
-                    splitmuxsink name=sm_{channel} muxer=matroskamux max-size-time={segment_length} sink="matroskademux ! filesink"
+                d.src_{channel} ! splitmuxsink name=mux_{channel} muxer=wavenc max-size-time={segment_length} location=/tmp/aes67_{channel}_%05d.wav
             """.format(
                 channel=channel,
                 segment_length=segment_length
             )
 
         # parse pipeline
-        self.log.debug('Creating Mixing-Pipeline:\n%s', pipeline)
+        self.log.debug('Creating Audio-Pipeline:\n%s', pipeline)
         self.pipeline = Gst.parse_launch(pipeline)
         # self.pipeline.use_clock(Clock) # TODO
 
+        self.log.debug('Binding Location-Name Signals')
         for channel in range(0, int(config['source']['channels'])):
-            el = self.pipeline.get_by_name("sm_{channel}".format(channel=channel))
+            dirname = self.config['channelmap'].get(str(channel))
 
-            if el is None:
+            if dirname == DISCARD_CHANNEL_KEYWORD:
                 continue
 
-            dirname = self.config['channelmap'].get(str(channel))
             if dirname is None:
                 dirname = "unknown/{channel}".format(channel=channel)
                 self.log.warn("Channel {channel} has no mapping in the config and will be recorded as {dirname}"
@@ -81,9 +80,11 @@ class Pipeline(object):
             dirpath = os.path.join(config['capture']['folder'], dirname)
             os.makedirs(dirpath, exist_ok=True)
 
+            el = self.pipeline.get_by_name("mux_{channel}".format(channel=channel))
             el.connect('format-location', self.on_format_location, channel, dirpath)
 
         # configure bus
+        self.log.debug('Binding Bus-Signals')
         bus = self.pipeline.get_bus()
         bus.add_signal_watch()
         bus.enable_sync_message_emission()
@@ -100,9 +101,10 @@ class Pipeline(object):
         self.pipeline.set_state(Gst.State.PLAYING)
 
     def on_format_location(self, mux, fragment, channel, dirpath):
-        filename = time.strftime('%Y-%m-%d_%H-%S', time.localtime()) + ".wav"
+        filename = time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime()) + ".wav"
         filepath = os.path.join(dirpath, filename)
-        self.log.debug("electing filepath for channel {channel}: {filepath}".format(channel=channel, filepath=filepath))
+        self.log.debug("constructing filepath for channel {channel}: {filepath}".format(
+            channel=channel, filepath=filepath))
         return filepath
 
     def on_level(self, bus, msg):

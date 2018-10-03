@@ -19,3 +19,12 @@ virtualenv -ppython3 env
 ./env/bin/pip install -r requirements.txt
 ./env/bin/python main.py --source-url=… --capture-folder=…
 ```
+
+## Troubleshooting
+### Error-Message from gst_element_request_pad
+```
+gst_element_request_pad: assertion 'templ != NULL' failed
+WARNING: erroneous pipeline: could not link audiotestsrc0 to mux_0, mux_0 can't handle caps audio/x-raw, format=(string)S24LE, rate=(int)48000, channels=(int)1
+```
+
+[Known Bug in GStreamer](https://bugzilla.gnome.org/show_bug.cgi?id=797241), a Patch has been proposed on the Bug which fixes this problem. Until it landed you probably need to build your own Version of GStreamer.

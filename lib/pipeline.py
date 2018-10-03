@@ -23,12 +23,18 @@ class Pipeline(object):
             """
         else:
             pipeline += """
-                rtspsrc location={location} !
+                rtspsrc protocols=udp-mcast location={location} !
                     rtpjitterbuffer latency={latency} !
                     rtpL24depay !
                     audio/x-raw, channels={channels}, format={source_format}, rate={rate} !
                     audioconvert !
-            """
+            """.format(
+                location=config['source']['url'],
+                latency=config['clocking']['jitterbuffer-seconds'],
+                channels=config['source']['channels'],
+                rate=config['source']['rate'],
+                source_format=config['source']['format'],
+            )
 
         pipeline += """
                 audio/x-raw, channels={channels}, format={capture_format}, rate={rate} !
@@ -37,11 +43,8 @@ class Pipeline(object):
                 tee. ! audioconvert ! audio/x-raw, format=S16LE ! level interval={level_interval} name=lvl
                 tee. ! deinterleave name=d
         """.format(
-            location=config['source']['url'],
-            latency=config['clocking']['jitterbuffer-seconds'],
             channels=config['source']['channels'],
             rate=config['source']['rate'],
-            source_format=config['source']['format'],
             capture_format=config['capture']['format'],
             level_interval=int(config['gui']['level-interval']) * 1000000
         )

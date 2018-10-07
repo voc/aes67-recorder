@@ -1,0 +1,16 @@
+Click==7.0
+dnspython==1.15.0
+eventlet==0.24.1
+Flask==1.0.2
+greenlet==0.4.15
+itsdangerous==0.24
+Jinja2==2.10
+MarkupSafe==1.0
+monotonic==1.5
+python-engineio==2.3.1
+python-socketio==2.0.0
+ruamel.yaml==0.15.72
+six==1.11.0
+vext==0.7.0
+vext.gi==0.7.0
+Werkzeug==0.14.1

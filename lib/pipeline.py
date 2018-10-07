@@ -99,6 +99,7 @@ class Pipeline(object):
         # connect bus-message-handler for level-messages
         bus.connect("message::element", self.on_level)
 
+    def start(self):
         # start process
         self.log.debug('Launching Mixing-Pipeline')
         self.pipeline.set_state(Gst.State.PLAYING)

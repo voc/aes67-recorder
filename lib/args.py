@@ -14,8 +14,8 @@ parser.add_argument('-c', '--color',
 parser.add_argument('-t', '--timestamp', action='store_true',
                     help="Enable timestamps in the Log-Output")
 
-parser.add_argument('-i', '--ini-file', action='store', required=True,
-                    help="Path to config.ini-File")
+parser.add_argument('-i', '--config-file', action='store', required=True,
+                    help="Path to a specific Config-Yaml-File to load")
 
 parser.add_argument('-s', '--source-url', action='store',
                     help="RTSP Source-Url")
@@ -24,7 +24,7 @@ parser.add_argument('-f', '--capture-folder', action='store',
                     help="Destination Folder")
 
 parser.add_argument('--demo', action='store_true',
-                    help="Enable Demo-Model, where instead of a real RTSP-Source a internally generated test-source is used")
+                    help="Enable Demo-Mode, where instead of a real RTSP-Source a internally generated test-source is used")
 
 
 def parse():

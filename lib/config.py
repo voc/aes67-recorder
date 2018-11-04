@@ -1,60 +1,44 @@
 import logging
 import os.path
-from configparser import SafeConfigParser
+from pprint import pformat
 
+import yaml
 
-class VocConfigParser(SafeConfigParser):
-    def getlist(self, section, option):
-        option = self.get(section, option).strip()
-        if len(option) == 0:
-            return []
-
-        unfiltered = [x.strip() for x in option.split(',')]
-        return list(filter(None, unfiltered))
+log = logging.getLogger('Config')
 
 
 def load(args):
-    """
-    :type args namespace
-    :return VocConfigParser
-    """
-    files = [
-        '/etc/aes67-backup.ini',
-        os.path.expanduser('~/.aes67-backup.ini'),
-    ]
+    config = _load(args)
 
-    if args.ini_file is not None:
-        files.append(args.ini_file)
+    if args.demo:
+        config['sources'] = [{
+            "type": "demo",
+            "channels": 8
+        }]
 
-    config = VocConfigParser()
-    readfiles = config.read(files)
-
-    log = logging.getLogger('ConfigParser')
-    log.debug('considered config-files: \n%s',
-              "\n".join([
-                  "\t\t" + os.path.normpath(file)
-                  for file in files
-              ]))
-    log.debug('successfully parsed config-files: \n%s',
-              "\n".join([
-                  "\t\t" + os.path.normpath(file)
-                  for file in readfiles
-              ]))
-
-    if args.ini_file is not None and args.ini_file not in readfiles:
-        raise RuntimeError('explicitly requested config-file "{}" '
-                           'could not be read'.format(args.ini_file))
-
-    if args.source_url:
-        if config['source'].get('url') is not None:
-            log.warn('source-url specified in config *and* on command-line, command-line wins')
-            config['source']['url'] = args.source_url
-
-    if args.capture_folder:
-        if config['capture'].get('folder') is not None:
-            log.warn('capture-folder specified in config *and* on command-line, command-line wins')
-            config['capture']['folder'] = args.capture_folder
-
-    config['source']['demo'] = 'true' if args.demo else 'false'
+    log.debug('Loaded config: \n%s', pformat(config))
 
     return config
+
+
+def _load(args):
+    if args.config_file is not None:
+        log.info("Loading specified Config-File %s", args.config_file)
+        with open(args.config_file, 'r') as f:
+            return yaml.safe_load(f)
+
+    else:
+        files = [
+            '/etc/aes67-backup.yaml',
+            os.path.expanduser('~/.aes67-backup.yaml'),
+        ]
+        for file in files:
+            try:
+                log.info("Trying to load Config-File %s", file)
+                with open(file, 'r') as f:
+                    return yaml.safe_load(f)
+            except:
+                pass
+
+    log.info("No Config-File found")
+    raise RuntimeError('no config-file found or specified')

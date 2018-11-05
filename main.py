@@ -68,7 +68,8 @@ class Backuptool(object):
             self.mainloop.run()
         except KeyboardInterrupt:
             self.log.info('Terminated via Ctrl-C')
-            self.webserver.stop()
+            if self.config['gui']['enabled']:
+                self.webserver.stop()
 
     def quit(self):
         self.log.info('quitting GObject-MainLoop')

@@ -29,7 +29,7 @@ class Source(object):
             return ""
 
     def _build_sourcecaps(self):
-        return "audio/x-raw, channels={channels}, format={source_format}, rate={rate} !".format(
+        return "audio/x-raw, channels={channels}, format={source_format}, rate={rate}".format(
             channels=self.source_config['channels'],
             rate=self.config['source']['rate'],
             source_format=self.config['source']['format'],

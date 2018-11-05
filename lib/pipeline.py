@@ -21,16 +21,18 @@ class Pipeline(object):
 
         sources = config['sources']
 
-        for source in sources:
-            pipeline += self.build_source_pipeline(Source.from_config(config, source)) + "\n"
+        self.log.debug('Constructing Pipeline-Description')
+        for idx, source in enumerate(sources):
+            pipeline += self.build_source_pipeline(idx, Source.from_config(config, source)) + "\n"
 
         # parse pipeline
-        self.log.debug('Creating Audio-Pipeline:\n%s', pipeline)
+        self.log.debug('Creating Pipeline:\n%s', pipeline)
         self.pipeline = Gst.parse_launch(pipeline)
         # self.pipeline.use_clock(Clock) # TODO
 
-        for source in sources:
-            self.configure_source_pipeline(Source.from_config(config, source))
+        self.log.debug('Configuring Pipelines')
+        for idx, source in enumerate(sources):
+            self.configure_source_pipeline(idx, Source.from_config(config, source))
 
         # configure bus
         self.log.debug('Binding Bus-Signals')
@@ -45,17 +47,18 @@ class Pipeline(object):
         # connect bus-message-handler for level-messages
         bus.connect("message::element", self.on_level)
 
-    def build_source_pipeline(self, source):
+    def build_source_pipeline(self, idx, source):
         channels = source.source_config['channels']
 
         pipeline = source.build_pipeline().rstrip() + """ !
             audioconvert !
             audio/x-raw, channels={channels}, format={capture_format}, rate={rate} !
-            tee name=tee
+            tee name=tee_src_{idx}
 
-            tee. ! audioconvert ! audio/x-raw, format=S16LE ! level interval={level_interval} name=lvl
-            tee. ! deinterleave name=d
+            tee_src_{idx}. ! audioconvert ! audio/x-raw, format=S16LE ! level interval={level_interval} name=lvl_src_{idx}
+            tee_src_{idx}. ! deinterleave name=d_src_{idx}
         """.format(
+            idx=idx,
             channels=channels,
             rate=self.config['source']['rate'],
             capture_format=self.config['capture']['format'],
@@ -70,18 +73,18 @@ class Pipeline(object):
                 continue
 
             pipeline += """
-                d.src_{channel} ! splitmuxsink name=mux_{channel} muxer=wavenc max-size-time={segment_length} location=/tmp/aes67_{channel}_%05d.wav
+                d_src_{idx}.src_{channel} ! splitmuxsink name=mux_src_{idx}_ch_{channel} muxer=wavenc max-size-time={segment_length} location=/tmp/aes67_{channel}_%05d.wav
             """.rstrip().format(
+                idx=idx,
                 channel=channel,
                 segment_length=segment_length
             )
 
         return pipeline
 
-    def configure_source_pipeline(self, source):
+    def configure_source_pipeline(self, source_idx, source):
         channels = source.source_config['channels']
 
-        self.log.debug('Binding Location-Name Signals')
         for channel in range(0, channels):
             dirname = self.config['channelmap'].get(channel)
 
@@ -96,7 +99,7 @@ class Pipeline(object):
             dirpath = os.path.join(self.config['capture']['folder'], dirname)
             os.makedirs(dirpath, exist_ok=True)
 
-            el = self.pipeline.get_by_name("mux_{channel}".format(channel=channel))
+            el = self.pipeline.get_by_name("mux_src_{source}_ch_{channel}".format(source=source_idx, channel=channel))
             el.connect('format-location', self.on_format_location, channel, dirpath)
 
     def start(self):

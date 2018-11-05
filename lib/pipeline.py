@@ -31,8 +31,10 @@ class Pipeline(object):
         # self.pipeline.use_clock(Clock) # TODO
 
         self.log.debug('Configuring Pipelines')
+        channel_offset = 0
         for idx, source in enumerate(sources):
-            self.configure_source_pipeline(idx, Source.from_config(config, source))
+            self.configure_source_pipeline(idx, channel_offset, Source.from_config(config, source))
+            channel_offset += source['channels']
 
         # configure bus
         self.log.debug('Binding Bus-Signals')
@@ -73,7 +75,7 @@ class Pipeline(object):
                 continue
 
             pipeline += """
-                d_src_{idx}.src_{channel} ! splitmuxsink name=mux_src_{idx}_ch_{channel} muxer=wavenc max-size-time={segment_length} location=/tmp/aes67_{channel}_%05d.wav
+                d_src_{idx}.src_{channel} ! splitmuxsink name=mux_src_{idx}_ch_{channel} muxer=wavenc max-size-time={segment_length} location=/dev/null
             """.rstrip().format(
                 idx=idx,
                 channel=channel,
@@ -82,10 +84,12 @@ class Pipeline(object):
 
         return pipeline
 
-    def configure_source_pipeline(self, source_idx, source):
+    def configure_source_pipeline(self, source_idx, channel_offset, source):
         channels = source.source_config['channels']
 
-        for channel in range(0, channels):
+        self.log.debug('configuring channels %d to %d', channel_offset, channel_offset + channels - 1)
+        for source_channel in range(0, channels):
+            channel = channel_offset + source_channel
             dirname = self.config['channelmap'].get(channel)
 
             if dirname == DISCARD_CHANNEL_KEYWORD:
@@ -99,7 +103,8 @@ class Pipeline(object):
             dirpath = os.path.join(self.config['capture']['folder'], dirname)
             os.makedirs(dirpath, exist_ok=True)
 
-            el = self.pipeline.get_by_name("mux_src_{source}_ch_{channel}".format(source=source_idx, channel=channel))
+            el = self.pipeline.get_by_name(
+                "mux_src_{source}_ch_{channel}".format(source=source_idx, channel=source_channel))
             el.connect('format-location', self.on_format_location, channel, dirpath)
 
     def start(self):

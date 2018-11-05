@@ -15,9 +15,13 @@ For the time being, just take a look at [config.ini](config.ini).
 
 ## Running
 ```
+sudo apt install virtualenv
 virtualenv -ppython3 env
 ./env/bin/pip install -r requirements.txt
-./env/bin/python main.py --source-url=… --capture-folder=…
+
+ln -s /usr/lib/python3.5/dist-packages/gi env/lib/python3.5/site-packages
+
+./env/bin/python main.py -i my-config.yaml
 ```
 
 ## Troubleshooting

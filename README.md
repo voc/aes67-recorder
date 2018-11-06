@@ -11,7 +11,7 @@ On 34C3 we used tascam SSD-recorder to record all audio-tracks from all sub-grou
 On 35C3 we plan to fix these issues by capturing the Audio via AES67 and gstreamer to chunked, nicely named .wav-files, constantly syncing them to a storage-server.
 
 ## Configuration
-For the time being, just take a look at [config.ini](config.ini).
+For the time being, just take a look at [config.yaml](config.yaml).
 
 ## Running
 ```

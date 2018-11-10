@@ -15,11 +15,12 @@ For the time being, just take a look at [config.yaml](config.yaml).
 
 ## Running
 ```
-sudo apt install virtualenv
+sudo apt install virtualenv python3-gi
 virtualenv -ppython3 env
 ./env/bin/pip install -r requirements.txt
 
-ln -s /usr/lib/python3.5/dist-packages/gi env/lib/python3.5/site-packages
+ls -lad /usr/lib/python3*/dist-packages/gi
+ln -s /usr/lib/python3*/dist-packages/gi env/lib/python3*/site-packages
 
 ./env/bin/python main.py -i my-config.yaml
 ```

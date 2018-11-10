@@ -12,17 +12,24 @@ sources:
 #  channels: 2
 
 # for Mediornet
-- type: udp
-  channels: 8
-  address: 239.1.42.1
-  iface: enp4s1.3
-  port: 5004
+#- type: udp
+#  channels: 8
+#  address: 239.1.42.1
+#  iface: enp4s1.3
+#  port: 5004
 
-- type: udp
+#- type: udp
+#  channels: 8
+#  address: 239.1.42.2
+#  iface: enp4s1.3
+#  port: 5004
+
+# for Demo
+- type: demo
   channels: 8
-  address: 239.1.42.2
-  iface: enp4s1.3
-  port: 5004
+
+- type: demo
+  channels: 8
 
 clocking:
   source: system

@@ -49,7 +49,7 @@ class Pipeline(object):
         bus.connect("message::error", self.on_error)
 
         # connect bus-message-handler for level-messages
-        bus.connect("message::element", self.on_level)
+        bus.connect("message::element", self.on_message)
 
     def build_source_pipeline(self, idx, source):
         channels = source.source_config['channels']
@@ -117,12 +117,12 @@ class Pipeline(object):
     def on_format_location(self, mux, fragment, channel, dirpath):
         filename = time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime()) + ".wav"
         filepath = os.path.join(dirpath, filename)
-        self.log.debug("constructing filepath for channel {channel}: {filepath}".format(
+        self.log.info("constructing filepath for channel {channel}: {filepath}".format(
             channel=channel, filepath=filepath))
         return filepath
 
-    def on_level(self, bus, msg):
-        if msg.src.name != 'lvl':
+    def on_message(self, bus, msg):
+        if not msg.src.name.startswith('lvl_'):
             return
 
         if msg.type != Gst.MessageType.ELEMENT:
@@ -131,7 +131,7 @@ class Pipeline(object):
         rms = msg.get_structure().get_value('rms')
         peak = msg.get_structure().get_value('peak')
         decay = msg.get_structure().get_value('decay')
-        self.log.debug('level_callback\n  rms=%s\n  peak=%s\n  decay=%s', rms, peak, decay)
+        self.log.debug('level_callback %s\n  rms=%s\n  peak=%s\n  decay=%s', msg.src.name, rms, peak, decay)
 
     def on_eos(self, bus, message):
         self.log.debug('Received End-of-Stream-Signal on Mixing-Pipeline')

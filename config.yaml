@@ -79,17 +79,3 @@ capture:
 
   # desired capture-format, check supported with `gst-inspect-1.0 wavenc`
   format: S24LE
-
-gui:
-  enabled: true
-  listen: 127.0.0.1
-  port: 3000
-
-  # interval between updated of the audio-levels in miliseconds
-  level-interval: 500
-
-mqtt:
-  enabled: true
-  host: mng.c3voc.de
-  port: 8333
-  ca-cert: /etc/ssl/certs/

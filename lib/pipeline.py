@@ -10,6 +10,8 @@ DISCARD_CHANNEL_KEYWORD = "!discard"
 
 
 class Pipeline(object):
+    LEVEL_INTERVAL_MS = 500
+
     def __init__(self, config):
         """
         :type config lib.config.VocConfigParser
@@ -64,7 +66,7 @@ class Pipeline(object):
             channels=channels,
             rate=self.config['source']['rate'],
             capture_format=self.config['capture']['format'],
-            level_interval=self.config['gui']['level-interval'] * 1000000
+            level_interval=self.LEVEL_INTERVAL_MS * 1000000
         )
 
         segment_length = self.config['capture']['segment-length'] * 1000000000

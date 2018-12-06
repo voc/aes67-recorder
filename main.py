@@ -5,9 +5,6 @@ import sys
 
 import gi
 
-# import GStreamer and GLib-Helper classes
-from lib.webserver import Webserver
-
 gi.require_version('Gst', '1.0')
 gi.require_version('GstNet', '1.0')
 from gi.repository import Gst, GObject
@@ -51,16 +48,8 @@ class Backuptool(object):
         self.log.debug('creating Audio-Pipeline')
         self.pipeline = Pipeline(config)
 
-        if self.config['gui']['enabled']:
-            self.log.debug('creating Webserver')
-            self.webserver = Webserver(config)
-
     def run(self):
-        self.log.info('running Webserver')
-
-        if self.config['gui']['enabled']:
-            self.webserver.start()
-
+        self.log.info('starting Pipeline')
         self.pipeline.start()
 
         try:
@@ -68,8 +57,6 @@ class Backuptool(object):
             self.mainloop.run()
         except KeyboardInterrupt:
             self.log.info('Terminated via Ctrl-C')
-            if self.config['gui']['enabled']:
-                self.webserver.stop()
 
     def quit(self):
         self.log.info('quitting GObject-MainLoop')

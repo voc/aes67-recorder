@@ -12,6 +12,7 @@ from gi.repository import Gst, GObject
 # import local classes
 from lib.loghandler import LogHandler
 from lib.pipeline import Pipeline
+from lib.status_server import StatusServer
 import lib.args
 import lib.config
 
@@ -46,7 +47,8 @@ class Backuptool(object):
 
         # initialize subsystem
         self.log.debug('creating Audio-Pipeline')
-        self.pipeline = Pipeline(config)
+        self.statusServer = StatusServer(config)
+        self.pipeline = Pipeline(config, self.statusServer)
 
     def run(self):
         self.log.info('starting Pipeline')

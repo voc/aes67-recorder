@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import time
@@ -10,13 +11,14 @@ DISCARD_CHANNEL_KEYWORD = "!discard"
 
 
 class Pipeline(object):
-    LEVEL_INTERVAL_MS = 500
 
-    def __init__(self, config):
+    def __init__(self, config, statusServer):
         """
+        :param statusServer: lib.status_server.StatusServer
         :type config lib.config.VocConfigParser
         """
         self.config = config
+        self.statusServer = statusServer
 
         self.log = logging.getLogger('Pipeline')
         pipeline = ""
@@ -32,11 +34,18 @@ class Pipeline(object):
         self.pipeline = Gst.parse_launch(pipeline)
         # self.pipeline.use_clock(Clock) # TODO
 
-        self.log.debug('Configuring Pipelines')
+        self.log.debug('Caclulating Channel-Offsets')
         channel_offset = 0
+        self.channel_offsets = {}
         for idx, source in enumerate(sources):
-            self.configure_source_pipeline(idx, channel_offset, Source.from_config(config, source))
+            last_channel = channel_offset + source['channels'] - 1
+            self.log.debug('Source %d provides channels %d to %d', idx, channel_offset, last_channel)
+            self.channel_offsets[idx] = (channel_offset, last_channel)
             channel_offset += source['channels']
+
+        self.log.debug('Configuring Pipelines')
+        for idx, source in enumerate(sources):
+            self.configure_source_pipeline(idx, Source.from_config(config, source))
 
         # configure bus
         self.log.debug('Binding Bus-Signals')
@@ -66,7 +75,7 @@ class Pipeline(object):
             channels=channels,
             rate=self.config['source']['rate'],
             capture_format=self.config['capture']['format'],
-            level_interval=self.LEVEL_INTERVAL_MS * 1000000
+            level_interval=self.config['status_server']['level_interval_ms'] * 1000000
         )
 
         segment_length = self.config['capture']['segment-length'] * 1000000000
@@ -86,10 +95,11 @@ class Pipeline(object):
 
         return pipeline
 
-    def configure_source_pipeline(self, source_idx, channel_offset, source):
+    def configure_source_pipeline(self, source_idx, source):
         channels = source.source_config['channels']
+        channel_offset, last_channel = self.channel_offsets[source_idx]
 
-        self.log.debug('configuring channels %d to %d', channel_offset, channel_offset + channels - 1)
+        self.log.debug('configuring channels %d to %d', channel_offset, last_channel)
         for source_channel in range(0, channels):
             channel = channel_offset + source_channel
             dirname = self.config['channelmap'].get(channel)
@@ -119,6 +129,7 @@ class Pipeline(object):
         filepath = os.path.join(dirpath, filename)
         self.log.info("constructing filepath for channel {channel}: {filepath}".format(
             channel=channel, filepath=filepath))
+        self.send_filepath_message(channel, filepath)
         return filepath
 
     def on_message(self, bus, msg):
@@ -128,10 +139,12 @@ class Pipeline(object):
         if msg.type != Gst.MessageType.ELEMENT:
             return
 
+        src_idx = int(msg.src.name[len("lvl_src_"):])
         rms = msg.get_structure().get_value('rms')
         peak = msg.get_structure().get_value('peak')
         decay = msg.get_structure().get_value('decay')
-        self.log.debug('level_callback %s\n  rms=%s\n  peak=%s\n  decay=%s', msg.src.name, rms, peak, decay)
+        self.log.debug('level_callback src #%u\n  rms=%s\n  peak=%s\n  decay=%s', src_idx, rms, peak, decay)
+        self.send_level_message(src_idx, rms, peak, decay)
 
     def on_eos(self, bus, message):
         self.log.debug('Received End-of-Stream-Signal on Mixing-Pipeline')
@@ -140,3 +153,24 @@ class Pipeline(object):
         self.log.debug('Received Error-Signal on Mixing-Pipeline')
         (error, debug) = message.parse_error()
         self.log.debug('Error-Details: #%u: %s', error.code, debug)
+
+    def send_level_message(self, src_idx, rms, peak, decay):
+        from_channel, to_channel = self.channel_offsets[src_idx]
+        message = json.dumps({
+            "type": "audio_level",
+            "source_index": src_idx,
+            "from_channel": from_channel,
+            "to_channel": to_channel,
+            "rms": rms,
+            "peak": peak,
+            "decay": decay,
+        })
+        self.statusServer.transmit(message)
+
+    def send_filepath_message(self, channel, filepath):
+        message = json.dumps({
+            "type": "new_filepath",
+            "channel_index": channel,
+            "filepath": filepath,
+        })
+        self.statusServer.transmit(message)

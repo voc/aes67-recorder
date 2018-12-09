@@ -79,3 +79,9 @@ capture:
 
   # desired capture-format, check supported with `gst-inspect-1.0 wavenc`
   format: S24LE
+
+status_server:
+  port: 9999
+  bind: '::'
+  level_interval_ms: 1000
+  disk_level_interval_ms: 1000

@@ -13,15 +13,13 @@ On 35C3 we plan to fix these issues by capturing the Audio via AES67 and gstream
 ## Configuration
 For the time being, just take a look at [config.yaml](config.yaml).
 
+## Requirements
+```
+apt-get install gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-tools libgstreamer1.0-0 python3 python3-gi gir1.2-gstreamer-1.0 gir1.2-gst-plugins-base-1.0
+```
+
 ## Running
 ```
-sudo apt install virtualenv python3-gi
-virtualenv -ppython3 env
-./env/bin/pip install -r requirements.txt
-
-ls -lad /usr/lib/python3*/dist-packages/gi
-ln -s /usr/lib/python3*/dist-packages/gi env/lib/python3*/site-packages
-
 ./env/bin/python main.py -i my-config.yaml
 ```
 
@@ -32,4 +30,6 @@ gst_element_request_pad: assertion 'templ != NULL' failed
 WARNING: erroneous pipeline: could not link audiotestsrc0 to mux_0, mux_0 can't handle caps audio/x-raw, format=(string)S24LE, rate=(int)48000, channels=(int)1
 ```
 
-[Known Bug in GStreamer](https://bugzilla.gnome.org/show_bug.cgi?id=797241), a Patch has been proposed on the Bug which fixes this problem. Until it landed you probably need to build your own Version of GStreamer.
+[Known Bug in GStreamer](https://bugzilla.gnome.org/show_bug.cgi?id=797241), a Problem with the `splitmuxsink` not able to
+handle simple audio-only codecy, like `wavenc` a Patch has been merged to master which fixes this problem.
+Until it landed in your Distribution, you probably need to build your own Version of GStreamer.

@@ -1,15 +1,3 @@
-watchdog:
-  enabled: true
-  check_interval_ms: 1000
-  warn_after_missing_signal_for_ms: 2000
-  restart_after_missing_signal_for_ms: 5000
-  mqtt:
-    enabled: true
-    host: mng.c3voc.de
-    port: 1883
-    username: 'aes67-backup'
-    password: 'xxx'
-
 source:
   # expected sample-format
   format: S24BE
@@ -97,3 +85,15 @@ status_server:
   bind: '::'
   level_interval_ms: 250
   system_health_report_interval_ms: 1000
+
+watchdog:
+  enabled: true
+  check_interval_ms: 1000
+  warn_after_missing_signal_for_ms: 2000
+  restart_after_missing_signal_for_ms: 5000
+  mqtt:
+    enabled: true
+    host: mng.c3voc.de
+    port: 1883
+    username: 'aes67-backup'
+    password: 'xxx'

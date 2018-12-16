@@ -6,6 +6,7 @@ import time
 from gi.repository import Gst
 
 from lib.sources import Source
+from lib.watchdog import Watchdog
 
 DISCARD_CHANNEL_KEYWORD = "!discard"
 
@@ -59,6 +60,10 @@ class Pipeline(object):
 
         # connect bus-message-handler for level-messages
         bus.connect("message::element", self.on_message)
+
+        self.log.info('Starting Watchdog')
+        self.watchdog = Watchdog(config)
+
 
     def build_source_pipeline(self, idx, source):
         channels = source.source_config['channels']
@@ -145,6 +150,7 @@ class Pipeline(object):
         decay = msg.get_structure().get_value('decay')
         self.log.debug('level_callback src #%u\n  rms=%s\n  peak=%s\n  decay=%s', src_idx, rms, peak, decay)
         self.send_level_message(src_idx, rms, peak, decay)
+        self.watchdog.ping(src_idx)
 
     def on_eos(self, bus, message):
         self.log.debug('Received End-of-Stream-Signal on Mixing-Pipeline')

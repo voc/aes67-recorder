@@ -1,3 +1,8 @@
+watchdog:
+  check_interval_ms: 1000
+  warn_after_missing_signal_for_ms: 2000
+  restart_after_missing_signal_for_ms: 5000
+
 source:
   # expected sample-format
   format: S24BE

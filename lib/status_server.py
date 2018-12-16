@@ -1,3 +1,4 @@
+import json
 import logging
 import socket
 
@@ -38,6 +39,8 @@ class StatusServer(object):
 
         self.log.debug('setting gobject io-watch on connection')
         GObject.io_add_watch(conn, GObject.IO_ERR | GObject.IO_HUP, self.on_error)
+
+        self.send_config(conn)
         return True
 
     def on_error(self, conn, condition):
@@ -58,3 +61,9 @@ class StatusServer(object):
             except Exception:
                 self.log.debug('Exception during transmit, closing connection')
                 self.close_connection(conn)
+
+    def send_config(self, conn):
+        message = {"type": "system_config"}
+        message.update(self.config)
+        line = json.dumps(message)
+        conn.sendall(bytes(line + "\n", "utf-8"))

@@ -1,7 +1,14 @@
 watchdog:
+  enabled: true
   check_interval_ms: 1000
   warn_after_missing_signal_for_ms: 2000
   restart_after_missing_signal_for_ms: 5000
+  mqtt:
+    enabled: true
+    host: mng.c3voc.de
+    port: 1883
+    username: 'aes67-backup'
+    password: 'xxx'
 
 source:
   # expected sample-format

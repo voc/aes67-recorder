@@ -61,9 +61,9 @@ class Pipeline(object):
         # connect bus-message-handler for level-messages
         bus.connect("message::element", self.on_message)
 
-        self.log.info('Starting Watchdog')
-        self.watchdog = Watchdog(config)
-
+        if config['watchdog']['enabled']:
+            self.log.info('Starting Watchdog')
+            self.watchdog = Watchdog(config)
 
     def build_source_pipeline(self, idx, source):
         channels = source.source_config['channels']

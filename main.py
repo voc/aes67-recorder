@@ -5,6 +5,8 @@ import sys
 
 import gi
 
+from lib.system_health_reporter import SystemHealthReporter
+
 gi.require_version('Gst', '1.0')
 gi.require_version('GstNet', '1.0')
 from gi.repository import Gst, GObject
@@ -46,8 +48,14 @@ class Backuptool(object):
         self.mainloop = GObject.MainLoop()
 
         # initialize subsystem
-        self.log.debug('creating Audio-Pipeline')
+        self.log.debug('creating Status-Server')
         self.statusServer = StatusServer(config)
+
+        self.log.debug('creating System-Health Reporter')
+        self.systemHealthReporter = SystemHealthReporter(config, self.statusServer)
+
+
+        self.log.debug('creating Audio-Pipeline')
         self.pipeline = Pipeline(config, self.statusServer)
 
     def run(self):

@@ -83,5 +83,5 @@ capture:
 status_server:
   port: 9999
   bind: '::'
-  level_interval_ms: 1000
-  disk_level_interval_ms: 1000
+  level_interval_ms: 250
+  system_health_report_interval_ms: 1000

@@ -1,5 +1,5 @@
 $(function() {
-	var ws = new WebSocket("ws://127.0.0.1:9998/");
+	var ws = new WebSocket("ws://" + location.hostname + ":9998/");
 	var system_config = null;
 
 	ws.onmessage = function(event) {

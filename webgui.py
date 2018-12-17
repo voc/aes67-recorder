@@ -61,20 +61,14 @@ async def read_from_tcp():
     loop.stop()
 
 
-async def run_webserver(host, port):
-    app = web.Application()
-    app.router.add_get("/", lambda path: web.FileResponse('ui/index.html'))
-    app.router.add_static("/ui", "ui", show_index=True)
+app = web.Application()
+app.router.add_get("/", lambda path: web.FileResponse('ui/index.html'))
+app.router.add_static("/ui", "ui", show_index=True)
 
-    runner = web.AppRunner(app)
-    await runner.setup()
-
-    site = web.TCPSite(runner, host, port)
-    await site.start()
-
+webserver = loop.create_server(app.make_handler(), '0.0.0.0', 8080)
 
 log.info("Starting Webserver on port 8080")
-loop.run_until_complete(run_webserver('0.0.0.0', 8080))
+loop.run_until_complete(webserver)
 
 log.info("Starting Websocket-Server on port 9998")
 loop.run_until_complete(websockets.serve(

@@ -43,3 +43,8 @@
 	bottom: 3px;
 	font-size: 12px;
 }
+
+.filename-list {
+	overflow-y: scroll;
+	height: 135px;
+}

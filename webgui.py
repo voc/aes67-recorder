@@ -43,6 +43,9 @@ async def read_from_tcp():
     log.info("connected")
     while not reader.at_eof():
         bytes = await reader.readline()
+        if len(bytes) == 0:
+            break
+
         line = bytes.decode('utf-8').rstrip()
         message = json.loads(line)
         if message['type'] == 'system_config':

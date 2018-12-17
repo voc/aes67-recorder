@@ -65,5 +65,7 @@ class StatusServer(object):
     def send_config(self, conn):
         message = {"type": "system_config"}
         message.update(self.config)
+        message['watchdog']['mqtt']['password'] = '***';
+
         line = json.dumps(message)
         conn.sendall(bytes(line + "\n", "utf-8"))

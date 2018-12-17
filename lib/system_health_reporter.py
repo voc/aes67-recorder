@@ -38,11 +38,13 @@ class SystemHealthReporter(object):
             "bytes_free": f_bfree * f_frsize,
             "bytes_available": f_bavail * f_frsize,
             "bytes_available_percent": f_bfree / f_blocks,
+            "bytes_used": (f_blocks - f_bfree) * f_frsize,
 
             "inodes_total": f_files,
             "inodes_free": f_ffree,
             "inodes_available": f_favail,
             "inodes_available_percent": f_favail / f_files,
+            "inodes_used": (f_files - f_ffree),
 
             "interfaces": dict(map(
                 lambda ifname: (

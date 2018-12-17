@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<html lang="en">
+<head>
+	<!-- Required meta tags -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+	<title>AES67 Recorder GUI</title>
+
+	<link rel="stylesheet" href="ui/bootstrap-4.1.3/bootstrap.min.css">
+	<link rel="stylesheet" href="ui/ui.css">
+</head>
+<body>
+<div class="container-fluid">
+	<div class="card mt-3">
+		<h5 class="card-header">Audiolevel</h5>
+		<div class="card-body">
+
+			<div class="level-meters">
+				<div class="level-meter">
+					<div class="bar decay"></div>
+					<div class="bar rms"></div>
+					<div class="bar peak"></div>
+					<div class="label">0</div>
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+	<div class="card mt-3">
+		<h5 class="card-header">Filenames</h5>
+		<div class="card-body">
+
+			<ul class="filename-list">
+				<li>#<span>0</span>: <code>&ndash;</code></li>
+			</ul>
+
+		</div>
+	</div>
+
+	<div class="system-health mt-3 row">
+		<div class="col-md-6">
+			<div class=" card">
+				<h5 class="card-header">HDD/SSD</h5>
+				<div class="card-body">
+
+					<ul class="list-unstyled mb-0">
+						<li class="bytes"><strong class="bytes_used">…GB</strong> used of <strong class="bytes_total">…GB</strong> –
+							usage at <strong class="bytes_used_percent">…%</strong></li>
+						<li class="inodes"><strong class="inodes_used">…k</strong> inodes used of <strong class="inodes_total">…k</strong> –
+							usage at <strong class="inodes_used_percent">…%</strong></li>
+					</ul>
+
+				</div>
+			</div>
+		</div>
+
+		<div class="col-md-6">
+			<div class="card">
+				<h5 class="card-header">Network Interfaces</h5>
+				<div class="card-body">
+
+					<ul class="interfaces-list list-unstyled mb-0">
+						<li class="interfaces-item">
+							<strong class="name">eth…</strong>
+							<ul>
+								<li><strong class="rx_bytes">… MBit/s</strong> RX &ndash; <strong class="tx_bytes">… MBit/s</strong> TX</li>
+								<li><strong class="rx_packets">… MPacket/s</strong> RX &ndash; <strong class="tx_packets">…
+									MPacket/s</strong> TX
+								</li>
+							</ul>
+						</li>
+					</ul>
+
+				</div>
+			</div>
+		</div>
+	</div>
+
+</div>
+<script src="ui/jquery-3.3.1.min.js"></script>
+<script src=" ui/ui.js"></script>
+</body>
+</html>

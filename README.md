@@ -15,13 +15,30 @@ For the time being, just take a look at [config.yaml](config.yaml).
 
 ## Requirements
 ```
-apt-get install gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-tools libgstreamer1.0-0 python3 python3-gi gir1.2-gstreamer-1.0 gir1.2-gst-plugins-base-1.0
+# for the main recording application
+apt-get install gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-tools libgstreamer1.0-0 gir1.2-gstreamer-1.0 gir1.2-gst-plugins-base-1.0
+apt-get install python3 python3-yaml python3-paho-mqtt python3-gi
+
+# for the web-gui application
+sudo apt-get install python3-socketio-client python3-flask
 ```
 
 ## Running
+The recorder itself is a headless application. It publishes status information via tcp on localhost port 9999.
 ```
-./env/bin/python main.py -i my-config.yaml
+./main.py -i my-config.yaml
+
+nc 127.0.0.1 9999
 ```
+
+A second application connects to this status-stream and serves a Web-UI on port 9998.
+```
+./web-ui.py -i my-config.yaml
+```
+
+The reason fo this split is, that a Web-UI with Websockets for live level-graphs does not fit nicely with the main recorder,
+built around GObject/GStreamer.
+
 
 ## Troubleshooting
 ### Error-Message from gst_element_request_pad

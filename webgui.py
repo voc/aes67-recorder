@@ -34,11 +34,11 @@ async def handle_websocket_connection(websocket, path):
         log.info("now %u websocket-clients" % len(websocket_clients))
 
 
-async def read_from_tcp():
+async def read_from_tcp(host, port):
     global system_config
     log = logging.getLogger("tcp-server")
 
-    reader, writer = await asyncio.open_connection('127.0.0.1', 9999)
+    reader, writer = await asyncio.open_connection(host, port)
 
     log.info("connected")
     while not reader.at_eof():
@@ -61,8 +61,13 @@ async def read_from_tcp():
     loop.stop()
 
 
+def handle_index(request):
+    with open('ui/index.html', 'r') as f:
+        return web.Response(text=f.read(), content_type="text/html", charset="utf-8")
+
+
 app = web.Application()
-app.router.add_get("/", lambda path: web.FileResponse('ui/index.html'))
+app.router.add_get("/", handle_index)
 app.router.add_static("/ui", "ui", show_index=True)
 
 webserver = loop.create_server(app.make_handler(), '0.0.0.0', 8080)
@@ -75,7 +80,7 @@ loop.run_until_complete(websockets.serve(
     handle_websocket_connection, '0.0.0.0', 9998))
 
 log.info("Starting TCP-Client on port 9999")
-loop.run_until_complete(read_from_tcp())
+loop.run_until_complete(read_from_tcp('127.0.0.1', 9999))
 
 loop.run_forever()
 log.info("Bye")

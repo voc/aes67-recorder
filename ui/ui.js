@@ -12,7 +12,7 @@ $(function() {
 				break;
 
 			case 'new_filepath':
-				update_filepath(message)
+				update_filepath(message);
 				break;
 
 			case 'audio_level':

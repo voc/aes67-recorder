@@ -35,7 +35,8 @@ clocking:
   source: system
 
   #source: ptp
-  #ptp_master: 192.168.178.24
+  #ptp_domain: 0
+  #ptp_interfaces: ['enp4s1.3']
 
   # in Seconds
   #jitterbuffer: 20 # for RAVENNA VS

@@ -41,7 +41,33 @@ class Pipeline(object):
         # parse pipeline
         self.log.debug('Creating Pipeline:\n%s', pipeline)
         self.pipeline = Gst.parse_launch(pipeline)
-        # self.pipeline.use_clock(Clock) # TODO
+
+        if config['clocking']['source'] == 'ptp':
+            from gi.repository import GstNet
+            ptp_domain = config['clocking']['ptp_domain']
+            ptp_interfaces = config['clocking']['ptp_interfaces']
+
+            self.log.info('initializing PTP-Subsystem for Network-Interface(s) %s', ptp_interfaces)
+            success = GstNet.ptp_init(GstNet.PTP_CLOCK_ID_NONE, ptp_interfaces)
+            if success:
+                self.log.debug('successfully initializing PTP-Subsystem')
+            else:
+                self.log.error('failed to initializing PTP-Subsystem')
+                sys.exit(42)
+
+            self.log.debug('obtaining PTP-Clock for domain %u', ptp_domain)
+            ptp_clock = GstNet.PtpClock.new('PTP-Master', ptp_domain)
+            if ptp_clock != None:
+                self.log.debug('obtained PTP-Clock for domain %u', ptp_domain)
+            else:
+                self.log.error('failed to obtain PTP-Clock')
+                sys.exit(42)
+
+            self.log.debug('waiting for PTP-Clock to sync')
+            ptp_clock.wait_for_sync(Gst.CLOCK_TIME_NONE)
+            self.log.info('successfully synced PTP-Clock')
+
+            self.pipeline.use_clock(ptp_clock)
 
         self.log.debug('Caclulating Channel-Offsets')
         channel_offset = 0

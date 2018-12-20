@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import sys
 import time
 
 from gi.repository import Gst
@@ -25,6 +26,13 @@ class Pipeline(object):
         pipeline = ""
 
         sources = config['sources']
+
+        dirnames = list(self.config['channelmap'].values())
+        non_unique = set(x for x in dirnames if dirnames.count(x) > 1 and x != DISCARD_CHANNEL_KEYWORD)
+        if len(non_unique) > 0:
+            self.log.error("Multiple channels use the same Recording-Name: " + ', '.join(non_unique))
+            self.log.error("Invalid config - Quitting")
+            sys.exit(42)
 
         self.log.debug('Constructing Pipeline-Description')
         for idx, source in enumerate(sources):

@@ -27,6 +27,8 @@ class Pipeline(object):
 
         sources = config['sources']
 
+        self.last_seen_pts = None
+
         dirnames = list(self.config['channelmap'].values())
         non_unique = set(x for x in dirnames if dirnames.count(x) > 1 and x != DISCARD_CHANNEL_KEYWORD)
         if len(non_unique) > 0:
@@ -82,6 +84,9 @@ class Pipeline(object):
         for idx, source in enumerate(sources):
             self.configure_source_pipeline(idx, Source.from_config(config, source))
 
+        self.log.debug('Binding Handoff-Signal')
+        self.pipeline.get_by_name('sig').connect('handoff', self.on_handoff)
+
         # configure bus
         self.log.debug('Binding Bus-Signals')
         bus = self.pipeline.get_bus()
@@ -104,6 +109,7 @@ class Pipeline(object):
 
         pipeline = source.build_pipeline().rstrip() + """ !
             audioconvert !
+            {handoff}
             audio/x-raw, channels={channels}, format={capture_format}, rate={rate} !
             tee name=tee_src_{idx}
 
@@ -112,12 +118,12 @@ class Pipeline(object):
         """.format(
             idx=idx,
             channels=channels,
+            handoff="identity signal-handoffs=true name=sig !" if idx == 0 else "",
             rate=self.config['source']['rate'],
             capture_format=self.config['capture']['format'],
             level_interval=self.config['status_server']['level_interval_ms'] * 1000000
         )
 
-        segment_length = self.config['capture']['segment-length'] * 1000000000
         for channel in range(0, channels):
             dirname = self.config['channelmap'].get(str(channel))
 
@@ -125,11 +131,10 @@ class Pipeline(object):
                 continue
 
             pipeline += """
-                d_src_{idx}.src_{channel} ! splitmuxsink name=mux_src_{idx}_ch_{channel} muxer=wavenc max-size-time={segment_length} location=/dev/null
+                d_src_{idx}.src_{channel} ! splitmuxsink name=mux_src_{idx}_ch_{channel} muxer=wavenc location=/dev/null
             """.rstrip().format(
                 idx=idx,
-                channel=channel,
-                segment_length=segment_length
+                channel=channel
             )
 
         return pipeline
@@ -170,6 +175,25 @@ class Pipeline(object):
             channel=channel, filepath=filepath))
         self.send_filepath_message(channel, filepath)
         return filepath
+
+    # this method will be called from the streaming-thread and can interact with all elements in sync
+    def on_handoff(self, element, buffer):
+        segment_length = self.config['capture']['segment_length_s'] * 1000000000
+
+        if self.last_seen_pts == None:
+            self.last_seen_pts = buffer.pts
+            return
+
+        if buffer.pts - self.last_seen_pts > segment_length:
+            self.last_seen_pts = buffer.pts
+            self.log.info('splitting segments')
+
+            for source_idx, source in enumerate(self.config['sources']):
+                channels = source['channels']
+                for source_channel in range(0, channels):
+                    el = self.pipeline.get_by_name(
+                        "mux_src_{source}_ch_{channel}".format(source=source_idx, channel=source_channel))
+                    el.emit('split-now')
 
     def on_message(self, bus, msg):
         if not msg.src.name.startswith('lvl_'):

@@ -76,7 +76,7 @@ capture:
   folder: /video/audio-backup/
 
   # length of a segment in seconds
-  segment-length: 5
+  segment_length_s: 5
 
   # desired capture-format, check supported with `gst-inspect-1.0 wavenc`
   format: S24LE

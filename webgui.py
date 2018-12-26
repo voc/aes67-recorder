@@ -13,14 +13,18 @@ websocket_clients = set()
 loop = asyncio.get_event_loop()
 
 system_config = None
-
+system_health_report = None
+file_paths = {}
 
 async def handle_websocket_connection(websocket, path):
-    global system_config
+    global system_config, system_health_report, new_filepath
     log = logging.getLogger("websocket")
 
-    log.info("new websocket-client, repeating system_config")
+    log.info("new websocket-client, repeating system_config, system_health_report and file_paths")
     await websocket.send(system_config)
+    await websocket.send(system_health_report)
+    for file_path in file_paths.values():
+        await websocket.send(file_path)
 
     websocket_clients.add(websocket)
     log.info("now %u websocket-clients" % len(websocket_clients))
@@ -35,7 +39,7 @@ async def handle_websocket_connection(websocket, path):
 
 
 async def read_from_tcp(host, port):
-    global system_config
+    global system_config, system_health_report, new_filepath
     log = logging.getLogger("tcp-server")
 
     reader, writer = await asyncio.open_connection(host, port)
@@ -51,6 +55,15 @@ async def read_from_tcp(host, port):
         if message['type'] == 'system_config':
             log.info("received system_config: %s" % line)
             system_config = line
+
+        if message['type'] == 'system_health_report':
+            log.info("received system_health_report: %s" % line)
+            system_health_report = line
+
+        if message['type'] == 'new_filepath':
+            log.debug("received new_filepath: %s" % line)
+            channel_index = message['channel_index']
+            file_paths[channel_index] = line
 
         log.debug('Received: %s' % line)
         if websocket_clients:

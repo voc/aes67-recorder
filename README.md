@@ -1,6 +1,8 @@
 # A Linux/GStreamer-Based AES67 Multitrack Audio Recording Solution
 Given you have an AES67 based Audio-over-IP Device or -Network and want to contiously record a given set of tracks uncompressed, then this might be for you.
 
+![AES67 Recorder GUI](doc/screenshot.jpg)
+
 On 34C3 we used tascam SSD-recorder to record all audio-tracks from all sub-groups to SSDs. this had some major drawbacks;
  * the recorder did record all 128 tracks and did not name them; so finding the ones of interest was quite hard
  * the recorder did not have NTP and their clocks were not set correctly
